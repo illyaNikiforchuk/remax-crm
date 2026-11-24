@@ -137,8 +137,8 @@ export function PropertyForm({ districts, property, mode }: Props) {
   }
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="bg-white border rounded-xl p-5 space-y-4">
-      <h2 className="font-semibold text-gray-900 border-b pb-3">{title}</h2>
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 space-y-4">
+      <h2 className="font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 pb-3">{title}</h2>
       {children}
     </div>
   )
@@ -155,7 +155,7 @@ export function PropertyForm({ districts, property, mode }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 max-w-3xl">
       {/* Basic */}
       <Section title="Основная информация">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Тип рынка *">
             <Select value={watch('market_type')} onValueChange={v => setValue('market_type', v as any)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -178,7 +178,7 @@ export function PropertyForm({ districts, property, mode }: Props) {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Район">
             <Select value={watch('district_id') || 'none'} onValueChange={v => setValue('district_id', v === 'none' ? undefined : v)}>
               <SelectTrigger><SelectValue placeholder="Выберите район" /></SelectTrigger>
@@ -237,7 +237,7 @@ export function PropertyForm({ districts, property, mode }: Props) {
           <Field label="Застройщик">
             <Input {...register('developer')} placeholder="ООО СтройГрупп" />
           </Field>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Field label="Первый взнос ($)">
               <Input {...register('down_payment')} type="number" placeholder="20000" />
             </Field>
@@ -254,7 +254,7 @@ export function PropertyForm({ districts, property, mode }: Props) {
       {/* Secondary market fields */}
       {marketType === 'secondary' && (
         <Section title="Вторичный рынок — контакт собственника">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Имя собственника">
               <Input {...register('owner_name')} placeholder="Нодар Гамсахурдия" />
             </Field>

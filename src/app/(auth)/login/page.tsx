@@ -21,15 +21,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="bg-white rounded-xl shadow-sm border p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-8">
           <div className="flex flex-col items-center mb-8">
             <div className="bg-blue-600 p-3 rounded-xl mb-4">
               <Building2 className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Batumi CRM</h1>
-            <p className="text-sm text-gray-500 mt-1">Агентство недвижимости</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Batumi CRM</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Агентство недвижимости</p>
           </div>
 
           <form action={handleSubmit} className="space-y-4">
