@@ -6,15 +6,15 @@ import { getSession } from '@/lib/session'
 
 export async function createClientAction(payload: {
   full_name: string
-  phone?: string
-  email?: string
+  phone?: string | null
+  email?: string | null
   budget_min?: number | null
   budget_max?: number | null
   assigned_to?: string | null
   status: string
-  notes?: string
-  property_types?: string[]
-  district_ids?: string[]
+  notes?: string | null
+  property_types?: string[] | null
+  district_ids?: string[] | null
 }) {
   const session = await getSession()
   if (!session) redirect('/login')
