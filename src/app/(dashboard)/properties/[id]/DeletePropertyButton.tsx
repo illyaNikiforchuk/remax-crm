@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { deletePropertyAction } from '../../actions'
+import { deletePropertyAction } from '../actions'
 
 export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(false)
