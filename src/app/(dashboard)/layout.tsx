@@ -1,22 +1,24 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { Sidebar } from '@/components/layout/Sidebar'
+import type { Profile } from '@/types'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getSession()
 
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.status === 'disabled') {
-    await supabase.auth.signOut()
+  if (!user || user.status === 'disabled') {
     redirect('/login')
+  }
+
+  const profile: Profile = {
+    id: user.id,
+    email: user.email,
+    full_name: user.full_name,
+    phone: null,
+    role: user.role,
+    status: user.status,
+    created_at: new Date().toISOString(),
+    created_by: null,
   }
 
   return (

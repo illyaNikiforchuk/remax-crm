@@ -1,26 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { PropertyForm } from '@/components/properties/PropertyForm'
 import { notFound, redirect } from 'next/navigation'
 
 export default async function EditPropertyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const session = await getSession()
   const supabase = await createClient()
 
-  const [propertyRes, districtsRes, sessionRes] = await Promise.all([
+  const [propertyRes, districtsRes] = await Promise.all([
     supabase.from('properties').select('*').eq('id', id).single(),
     supabase.from('districts').select('*').order('name'),
-    supabase.auth.getUser(),
   ])
 
   if (!propertyRes.data) notFound()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', sessionRes.data.user?.id || '')
-    .single()
-
-  const canEdit = profile?.role === 'admin' || propertyRes.data.author_id === sessionRes.data.user?.id
+  const canEdit = session?.role === 'admin' || propertyRes.data.author_id === session?.id
   if (!canEdit) redirect('/properties')
 
   return (

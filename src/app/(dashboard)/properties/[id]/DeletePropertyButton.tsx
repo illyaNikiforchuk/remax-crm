@@ -1,11 +1,11 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { deletePropertyAction } from '../../actions'
 
 export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(false)
@@ -14,15 +14,12 @@ export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
 
   async function handleDelete() {
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.from('properties').delete().eq('id', propertyId)
-
-    if (error) {
-      toast.error('Ошибка при удалении: ' + error.message)
+    const result = await deletePropertyAction(propertyId)
+    if (result.error) {
+      toast.error('Ошибка при удалении: ' + result.error)
       setLoading(false)
       return
     }
-
     toast.success('Объект удалён')
     router.push('/properties')
     router.refresh()

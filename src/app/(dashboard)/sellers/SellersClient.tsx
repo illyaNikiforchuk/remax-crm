@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { updateSellerStatusAction, createSellerAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,38 +21,30 @@ export function SellersClient({ sellers: initial }: { sellers: Profile[] }) {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-
-    const res = await fetch('/api/admin/create-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+    const result = await createSellerAction({
+      email: form.email,
+      full_name: form.full_name,
+      phone: form.phone || undefined,
+      role: form.role as 'admin' | 'seller',
+      password: form.password,
     })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      toast.error(data.error || 'Ошибка при создании')
-      setLoading(false)
-      return
+    if (result.error) {
+      toast.error(result.error || 'Ошибка при создании')
+    } else {
+      toast.success('Пользователь создан')
+      setShowCreate(false)
+      setForm({ email: '', full_name: '', phone: '', role: 'seller', password: '' })
     }
-
-    toast.success('Пользователь создан')
-    setSellers(prev => [data.profile, ...prev])
-    setShowCreate(false)
-    setForm({ email: '', full_name: '', phone: '', role: 'seller', password: '' })
     setLoading(false)
   }
 
   async function toggleStatus(seller: Profile) {
     const newStatus = seller.status === 'active' ? 'disabled' : 'active'
-    const supabase = createClient()
-    const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', seller.id)
-
-    if (error) {
-      toast.error('Ошибка: ' + error.message)
+    const result = await updateSellerStatusAction(seller.id, newStatus)
+    if (result.error) {
+      toast.error('Ошибка: ' + result.error)
       return
     }
-
     setSellers(prev => prev.map(s => s.id === seller.id ? { ...s, status: newStatus } : s))
     toast.success(newStatus === 'active' ? 'Пользователь активирован' : 'Пользователь отключён')
   }
@@ -60,21 +52,17 @@ export function SellersClient({ sellers: initial }: { sellers: Profile[] }) {
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-
     const res = await fetch('/api/admin/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: showReset, newPassword }),
     })
-
     const data = await res.json()
-
     if (!res.ok) {
       toast.error(data.error || 'Ошибка')
       setLoading(false)
       return
     }
-
     toast.success('Пароль изменён')
     setShowReset(null)
     setNewPassword('')

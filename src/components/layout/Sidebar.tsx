@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Building2, Users, MapPin, LogOut, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Profile } from '@/types'
@@ -28,10 +27,7 @@ export function Sidebar({ user }: SidebarProps) {
   const [open, setOpen] = useState(false)
 
   async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    router.push('/api/logout')
   }
 
   const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) => (

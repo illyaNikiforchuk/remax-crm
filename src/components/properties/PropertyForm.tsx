@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { createPropertyAction, updatePropertyAction } from '@/app/(dashboard)/properties/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -90,7 +90,6 @@ export function PropertyForm({ districts, property, mode }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function onSubmit(data: any) {
     setLoading(true)
-    const supabase = createClient()
 
     const payload = {
       market_type: data.market_type,
@@ -116,28 +115,18 @@ export function PropertyForm({ districts, property, mode }: Props) {
     }
 
     if (mode === 'create') {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data: created, error } = await supabase
-        .from('properties')
-        .insert({ ...payload, author_id: user!.id })
-        .select('id')
-        .single()
-
-      if (error) {
-        toast.error('Ошибка при создании: ' + error.message)
+      const result = await createPropertyAction(payload)
+      if (result.error) {
+        toast.error('Ошибка при создании: ' + result.error)
         setLoading(false)
         return
       }
       toast.success('Объект добавлен')
-      router.push(`/properties/${created.id}`)
+      router.push(`/properties/${result.id}`)
     } else {
-      const { error } = await supabase
-        .from('properties')
-        .update(payload)
-        .eq('id', property!.id)
-
-      if (error) {
-        toast.error('Ошибка при сохранении: ' + error.message)
+      const result = await updatePropertyAction(property!.id, payload)
+      if (result.error) {
+        toast.error('Ошибка при сохранении: ' + result.error)
         setLoading(false)
         return
       }

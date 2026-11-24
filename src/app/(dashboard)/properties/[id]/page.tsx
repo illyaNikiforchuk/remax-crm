@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSession } from '@/lib/session'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -9,23 +10,19 @@ import { DeletePropertyButton } from './DeletePropertyButton'
 
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const session = await getSession()
   const supabase = await createClient()
 
-  const [propertyRes, sessionRes] = await Promise.all([
-    supabase.from('properties').select('*, districts(name), profiles!author_id(full_name, email, phone)').eq('id', id).single(),
-    supabase.auth.getUser(),
-  ])
-
-  if (!propertyRes.data) notFound()
-  const p = propertyRes.data as any
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', sessionRes.data.user?.id || '')
+  const { data: property } = await supabase
+    .from('properties')
+    .select('*, districts(name), profiles!author_id(full_name, email, phone)')
+    .eq('id', id)
     .single()
 
-  const canEdit = profile?.role === 'admin' || p.author_id === sessionRes.data.user?.id
+  if (!property) notFound()
+  const p = property as any
+
+  const canEdit = session?.role === 'admin' || p.author_id === session?.id
 
   const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
     value ? (
@@ -52,7 +49,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {/* Header card */}
       <div className="bg-white border rounded-xl p-5">
         <div className="flex flex-wrap gap-2 mb-3">
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PROPERTY_STATUS_COLORS[p.status as keyof typeof PROPERTY_STATUS_COLORS]}`}>
@@ -84,7 +80,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Parameters */}
       <div className="bg-white border rounded-xl p-5">
         <h2 className="font-semibold text-gray-900 mb-3">Параметры</h2>
         <InfoRow label="Площадь" value={formatArea(p.area)} />
@@ -107,7 +102,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {/* Description */}
       {p.description && (
         <div className="bg-white border rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-3">Описание</h2>
@@ -115,63 +109,39 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      {/* Drive links */}
       {p.drive_links?.length > 0 && (
         <div className="bg-white border rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-3">Материалы Google Drive</h2>
           <div className="flex flex-wrap gap-2">
             {p.drive_links.map((link: { url: string; label: string }, i: number) => (
-              <a
-                key={i}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                {link.label}
+              <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
+                <ExternalLink className="h-3.5 w-3.5" />{link.label}
               </a>
             ))}
           </div>
         </div>
       )}
 
-      {/* Extra links */}
       {p.extra_links?.length > 0 && (
         <div className="bg-white border rounded-xl p-5">
           <h2 className="font-semibold text-gray-900 mb-3">Дополнительные ссылки</h2>
           <div className="flex flex-wrap gap-2">
             {p.extra_links.map((link: { url: string; label: string }, i: number) => (
-              <a
-                key={i}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                {link.label}
+              <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                <ExternalLink className="h-3.5 w-3.5" />{link.label}
               </a>
             ))}
           </div>
         </div>
       )}
 
-      {/* Meta */}
       <div className="bg-white border rounded-xl p-5">
         <h2 className="font-semibold text-gray-900 mb-3">Информация</h2>
-        <InfoRow
-          label="Добавил"
-          value={p.profiles?.full_name || p.profiles?.email}
-        />
-        <InfoRow
-          label="Дата добавления"
-          value={new Date(p.created_at).toLocaleDateString('ru-RU')}
-        />
-        <InfoRow
-          label="Последнее изменение"
-          value={new Date(p.updated_at).toLocaleDateString('ru-RU')}
-        />
+        <InfoRow label="Добавил" value={p.profiles?.full_name || p.profiles?.email} />
+        <InfoRow label="Дата добавления" value={new Date(p.created_at).toLocaleDateString('ru-RU')} />
+        <InfoRow label="Последнее изменение" value={new Date(p.updated_at).toLocaleDateString('ru-RU')} />
       </div>
     </div>
   )

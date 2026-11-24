@@ -1,7 +1,7 @@
 'use client'
+
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { loginAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,26 +9,15 @@ import { Building2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(formData: FormData) {
     setLoading(true)
-
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      toast.error('Неверный email или пароль')
+    const result = await loginAction(formData)
+    if (result?.error) {
+      toast.error(result.error)
       setLoading(false)
-      return
     }
-
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (
@@ -43,15 +32,14 @@ export default function LoginPage() {
             <p className="text-sm text-gray-500 mt-1">Агентство недвижимости</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form action={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="agent@batumi.ge"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
               />
@@ -61,10 +49,9 @@ export default function LoginPage() {
               <Label htmlFor="password">Пароль</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
               />

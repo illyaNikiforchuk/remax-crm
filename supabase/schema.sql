@@ -224,3 +224,22 @@ returns json language sql security definer stable as $$
     )
   );
 $$;
+
+-- ============================================================
+-- GRANTS (required for PostgREST / Supabase REST API access)
+-- ============================================================
+grant usage on schema public to anon, authenticated, service_role;
+
+grant select on table public.profiles to anon;
+grant select, insert, update, delete on table public.profiles to authenticated, service_role;
+
+grant select on table public.districts to anon, authenticated, service_role;
+grant insert, update, delete on table public.districts to authenticated, service_role;
+
+grant select on table public.properties to anon, authenticated, service_role;
+grant insert, update, delete on table public.properties to authenticated, service_role;
+
+grant select on table public.activity_log to authenticated, service_role;
+grant insert on table public.activity_log to authenticated, service_role;
+
+grant all on all sequences in schema public to anon, authenticated, service_role;
