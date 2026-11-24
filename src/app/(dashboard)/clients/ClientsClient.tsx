@@ -93,16 +93,19 @@ function clientToForm(c: Client): FormState {
   }
 }
 
-export function ClientsClient({ clients: initial, sellers, districts, currentUserId, isAdmin }: Props) {
-  const [clients, setClients] = useState(initial)
-  const [showCreate, setShowCreate] = useState(false)
-  const [editId, setEditId] = useState<string | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState<FormState>(emptyForm(currentUserId))
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+interface ClientFormProps {
+  form: FormState
+  setForm: React.Dispatch<React.SetStateAction<FormState>>
+  onSubmit: (e: React.FormEvent) => void
+  onCancel: () => void
+  title: string
+  loading: boolean
+  isAdmin: boolean
+  sellers: Seller[]
+  districts: District[]
+}
 
+function ClientForm({ form, setForm, onSubmit, onCancel, title, loading, isAdmin, sellers, districts }: ClientFormProps) {
   function togglePropType(type: string) {
     setForm(f => ({
       ...f,
@@ -121,84 +124,24 @@ export function ClientsClient({ clients: initial, sellers, districts, currentUse
     }))
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.full_name.trim()) return
-    setLoading(true)
-    const result = await createClientAction(formToPayload(form))
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Клиент добавлен')
-      setShowCreate(false)
-      setForm(emptyForm(currentUserId))
-      // reload
-      window.location.reload()
-    }
-    setLoading(false)
-  }
-
-  async function handleEdit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!editId) return
-    setLoading(true)
-    const result = await updateClientAction(editId, formToPayload(form))
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Сохранено')
-      setClients(prev => prev.map(c => c.id === editId ? { ...c, ...formToPayload(form) } : c))
-      setEditId(null)
-    }
-    setLoading(false)
-  }
-
-  async function handleDelete() {
-    if (!deleteId) return
-    setLoading(true)
-    const result = await deleteClientAction(deleteId)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Клиент удалён')
-      setClients(prev => prev.filter(c => c.id !== deleteId))
-      setDeleteId(null)
-    }
-    setLoading(false)
-  }
-
-  async function handleStatusChange(id: string, status: ClientStatus) {
-    const result = await updateClientAction(id, { status })
-    if (result.error) { toast.error(result.error); return }
-    setClients(prev => prev.map(c => c.id === id ? { ...c, status } : c))
-    toast.success('Статус обновлён')
-  }
-
-  function openEdit(c: Client) {
-    setForm(clientToForm(c))
-    setEditId(c.id)
-  }
-
-  const filtered = filterStatus === 'all' ? clients : clients.filter(c => c.status === filterStatus)
-
-  const ClientForm = ({ onSubmit, title }: { onSubmit: (e: React.FormEvent) => void; title: string }) => (
+  return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>ФИО *</Label>
-          <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} required placeholder="Иван Иванов" />
+          <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} required placeholder="Иван Иванов" />
         </div>
         <div className="space-y-1.5">
           <Label>Телефон</Label>
-          <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+995 591 234567" />
+          <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+995 591 234567" />
         </div>
         <div className="space-y-1.5">
           <Label>Email</Label>
-          <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="client@example.com" />
+          <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="client@example.com" />
         </div>
         <div className="space-y-1.5">
           <Label>Статус</Label>
-          <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as ClientStatus })}>
+          <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as ClientStatus }))}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
@@ -207,18 +150,18 @@ export function ClientsClient({ clients: initial, sellers, districts, currentUse
         </div>
         <div className="space-y-1.5">
           <Label>Бюджет от ($)</Label>
-          <Input type="number" value={form.budget_min} onChange={e => setForm({ ...form, budget_min: e.target.value })} placeholder="50000" />
+          <Input type="number" value={form.budget_min} onChange={e => setForm(f => ({ ...f, budget_min: e.target.value }))} placeholder="50000" />
         </div>
         <div className="space-y-1.5">
           <Label>Бюджет до ($)</Label>
-          <Input type="number" value={form.budget_max} onChange={e => setForm({ ...form, budget_max: e.target.value })} placeholder="150000" />
+          <Input type="number" value={form.budget_max} onChange={e => setForm(f => ({ ...f, budget_max: e.target.value }))} placeholder="150000" />
         </div>
       </div>
 
       {isAdmin && (
         <div className="space-y-1.5">
           <Label>Ответственный</Label>
-          <Select value={form.assigned_to} onValueChange={v => setForm({ ...form, assigned_to: v })}>
+          <Select value={form.assigned_to} onValueChange={v => setForm(f => ({ ...f, assigned_to: v }))}>
             <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
             <SelectContent>
               {sellers.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name || s.email}</SelectItem>)}
@@ -269,7 +212,7 @@ export function ClientsClient({ clients: initial, sellers, districts, currentUse
         <Label>Заметки</Label>
         <textarea
           value={form.notes}
-          onChange={e => setForm({ ...form, notes: e.target.value })}
+          onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
           rows={3}
           placeholder="Пожелания, детали..."
           className="flex w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 resize-none"
@@ -281,10 +224,80 @@ export function ClientsClient({ clients: initial, sellers, districts, currentUse
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {title}
         </Button>
-        <Button type="button" variant="outline" onClick={() => { setShowCreate(false); setEditId(null) }}>Отмена</Button>
+        <Button type="button" variant="outline" onClick={onCancel}>Отмена</Button>
       </div>
     </form>
   )
+}
+
+export function ClientsClient({ clients: initial, sellers, districts, currentUserId, isAdmin }: Props) {
+  const [clients, setClients] = useState(initial)
+  const [showCreate, setShowCreate] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState<FormState>(emptyForm(currentUserId))
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.full_name.trim()) return
+    setLoading(true)
+    const result = await createClientAction(formToPayload(form))
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Клиент добавлен')
+      setShowCreate(false)
+      setForm(emptyForm(currentUserId))
+      window.location.reload()
+    }
+    setLoading(false)
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editId) return
+    setLoading(true)
+    const result = await updateClientAction(editId, formToPayload(form))
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Сохранено')
+      setClients(prev => prev.map(c => c.id === editId ? { ...c, ...formToPayload(form) } : c))
+      setEditId(null)
+    }
+    setLoading(false)
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return
+    setLoading(true)
+    const result = await deleteClientAction(deleteId)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Клиент удалён')
+      setClients(prev => prev.filter(c => c.id !== deleteId))
+      setDeleteId(null)
+    }
+    setLoading(false)
+  }
+
+  async function handleStatusChange(id: string, status: ClientStatus) {
+    const result = await updateClientAction(id, { status })
+    if (result.error) { toast.error(result.error); return }
+    setClients(prev => prev.map(c => c.id === id ? { ...c, status } : c))
+    toast.success('Статус обновлён')
+  }
+
+  function openEdit(c: Client) {
+    setForm(clientToForm(c))
+    setEditId(c.id)
+  }
+
+  const filtered = filterStatus === 'all' ? clients : clients.filter(c => c.status === filterStatus)
 
   return (
     <div className="space-y-4">
@@ -422,7 +435,16 @@ export function ClientsClient({ clients: initial, sellers, districts, currentUse
           <DialogHeader>
             <DialogTitle>Добавить клиента</DialogTitle>
           </DialogHeader>
-          <ClientForm onSubmit={handleCreate} title="Добавить" />
+          <ClientForm
+            form={form} setForm={setForm}
+            onSubmit={handleCreate}
+            onCancel={() => setShowCreate(false)}
+            title="Добавить"
+            loading={loading}
+            isAdmin={isAdmin}
+            sellers={sellers}
+            districts={districts}
+          />
         </DialogContent>
       </Dialog>
 
@@ -432,7 +454,16 @@ export function ClientsClient({ clients: initial, sellers, districts, currentUse
           <DialogHeader>
             <DialogTitle>Редактировать клиента</DialogTitle>
           </DialogHeader>
-          <ClientForm onSubmit={handleEdit} title="Сохранить" />
+          <ClientForm
+            form={form} setForm={setForm}
+            onSubmit={handleEdit}
+            onCancel={() => setEditId(null)}
+            title="Сохранить"
+            loading={loading}
+            isAdmin={isAdmin}
+            sellers={sellers}
+            districts={districts}
+          />
         </DialogContent>
       </Dialog>
 
