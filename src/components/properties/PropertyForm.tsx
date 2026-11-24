@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,7 +33,7 @@ const schema = z.object({
   total_floors: z.coerce.number().int().positive().optional().or(z.literal('')),
   status: z.enum(['for_sale', 'booked', 'sold', 'withdrawn']),
   developer: z.string().optional(),
-  down_payment: z.coerce.number().positive().optional().or(z.literal('')),
+  down_payment_pct: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
   installment_months: z.coerce.number().int().positive().optional().or(z.literal('')),
   monthly_payment: z.coerce.number().positive().optional().or(z.literal('')),
   owner_name: z.string().optional(),
@@ -71,7 +71,9 @@ export function PropertyForm({ districts, property, mode }: Props) {
       total_floors: property?.total_floors || '',
       status: property?.status || 'for_sale',
       developer: property?.developer || '',
-      down_payment: property?.down_payment || '',
+      down_payment_pct: property?.down_payment && property?.price
+        ? Math.round(property.down_payment / property.price * 100)
+        : '',
       installment_months: property?.installment_months || '',
       monthly_payment: property?.monthly_payment || '',
       owner_name: property?.owner_name || '',
@@ -83,6 +85,19 @@ export function PropertyForm({ districts, property, mode }: Props) {
   })
 
   const marketType = watch('market_type')
+  const watchPrice = watch('price')
+  const watchPct = watch('down_payment_pct')
+  const watchMonths = watch('installment_months')
+
+  useEffect(() => {
+    const p = Number(watchPrice)
+    const pct = Number(watchPct)
+    const m = Number(watchMonths)
+    if (p > 0 && pct > 0 && m > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setValue('monthly_payment', Math.round((p - p * pct / 100) / m) as any)
+    }
+  }, [watchPrice, watchPct, watchMonths, setValue])
 
   const { fields: driveFields, append: appendDrive, remove: removeDrive } = useFieldArray({ control, name: 'drive_links' })
   const { fields: extraFields, append: appendExtra, remove: removeExtra } = useFieldArray({ control, name: 'extra_links' })
@@ -104,7 +119,9 @@ export function PropertyForm({ districts, property, mode }: Props) {
       total_floors: data.total_floors || null,
       status: data.status,
       developer: data.market_type === 'primary' ? data.developer || null : null,
-      down_payment: data.market_type === 'primary' ? data.down_payment || null : null,
+      down_payment: data.market_type === 'primary' && data.price && data.down_payment_pct
+        ? Math.round(Number(data.price) * Number(data.down_payment_pct) / 100)
+        : null,
       installment_months: data.market_type === 'primary' ? data.installment_months || null : null,
       monthly_payment: data.market_type === 'primary' ? data.monthly_payment || null : null,
       owner_name: data.market_type === 'secondary' ? data.owner_name || null : null,
@@ -238,8 +255,13 @@ export function PropertyForm({ districts, property, mode }: Props) {
             <Input {...register('developer')} placeholder="ООО СтройГрупп" />
           </Field>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Первый взнос ($)">
-              <Input {...register('down_payment')} type="number" placeholder="20000" />
+            <Field label="Первый взнос (%)">
+              <Input {...register('down_payment_pct')} type="number" min="0" max="100" step="1" placeholder="20" />
+              {watchPrice && watchPct ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  ≈ ${Math.round(Number(watchPrice) * Number(watchPct) / 100).toLocaleString()}
+                </p>
+              ) : null}
             </Field>
             <Field label="Рассрочка (мес.)">
               <Input {...register('installment_months')} type="number" placeholder="24" />

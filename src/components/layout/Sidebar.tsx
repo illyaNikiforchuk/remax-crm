@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Users, MapPin, LogOut, Menu, X, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, Building2, Users, MapPin, LogOut, Menu, X, Sun, Moon, UserRound } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -15,6 +15,7 @@ interface SidebarProps {
 const navItems = [
   { href: '/dashboard', label: 'Дашборд', icon: LayoutDashboard },
   { href: '/properties', label: 'Объекты', icon: Building2 },
+  { href: '/clients', label: 'Клиенты', icon: UserRound },
 ]
 
 const adminItems = [

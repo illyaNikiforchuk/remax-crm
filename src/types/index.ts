@@ -56,6 +56,25 @@ export interface Property {
   author?: Profile
 }
 
+export type ClientStatus = 'new' | 'active' | 'closed' | 'lost'
+
+export interface Client {
+  id: string
+  full_name: string
+  phone: string | null
+  email: string | null
+  budget_min: number | null
+  budget_max: number | null
+  assigned_to: string | null
+  status: ClientStatus
+  notes: string | null
+  property_types: string[] | null
+  district_ids: string[] | null
+  created_at: string
+  created_by: string | null
+  assigned_profile?: Profile
+}
+
 export interface DashboardStats {
   total: number
   for_sale: number
